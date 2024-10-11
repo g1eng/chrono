@@ -923,6 +923,19 @@ impl NaiveDateTime {
         tz.from_local_datetime(self)
     }
 
+    /// Returns the Julian day for the date.
+    ///
+    /// ```
+    /// # use chrono::NaiveDate;
+    /// let d = NaiveDate::from_ymd_opt(-4711, 1, 1).unwrap().and_hms_opt(12,0,0).unwrap().day_julian().unwrap();
+    /// assert!(d < 0.00000001);
+    /// assert!(d > -0.00000001);
+    /// ```
+    #[must_use]
+    pub fn day_julian(&self) -> Option<f64> {
+        self.date().day_julian()
+    }
+
     /// Converts the `NaiveDateTime` into the timezone-aware `DateTime<Utc>`.
     ///
     /// # Example

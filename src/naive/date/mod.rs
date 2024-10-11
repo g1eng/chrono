@@ -19,7 +19,6 @@ use core::iter::FusedIterator;
 use core::num::NonZeroI32;
 use core::ops::{Add, AddAssign, Sub, SubAssign};
 use core::{fmt, str};
-
 #[cfg(any(feature = "rkyv", feature = "rkyv-16", feature = "rkyv-32", feature = "rkyv-64"))]
 use rkyv::{Archive, Deserialize, Serialize};
 
@@ -37,6 +36,7 @@ use crate::month::Months;
 use crate::naive::{Days, IsoWeek, NaiveDateTime, NaiveTime, NaiveWeek};
 use crate::{expect, try_opt};
 use crate::{Datelike, TimeDelta, Weekday};
+use num_traits::ToPrimitive;
 
 use super::internals::{Mdf, YearFlags};
 
@@ -109,6 +109,10 @@ pub const MIN_DATE: NaiveDate = NaiveDate::MIN;
 /// The maximum possible `NaiveDate` (December 31, 262143 CE).
 #[deprecated(since = "0.4.20", note = "Use NaiveDate::MAX instead")]
 pub const MAX_DATE: NaiveDate = NaiveDate::MAX;
+
+
+pub(crate) const JULIAN_DAY_EPOCH: NaiveDateTime =
+    expect(NaiveDate::from_ymd_opt(-4711, 1, 1), "").and_time(NaiveTime::NOON);
 
 #[cfg(all(feature = "arbitrary", feature = "std"))]
 impl arbitrary::Arbitrary<'_> for NaiveDate {
@@ -1384,6 +1388,24 @@ impl NaiveDate {
             5 => Weekday::Sat,
             _ => Weekday::Sun,
         }
+    }
+
+    /// Returns the Julian day for the date.
+    ///
+    /// ```
+    /// # use chrono::NaiveDate;
+    /// let d = NaiveDate::from_ymd_opt(-4711, 1, 1).unwrap().and_hms_opt(12,0,0).unwrap().day_julian().unwrap();
+    /// assert!(d < 0.0000001);
+    /// assert!(d > -0.0000001);
+    /// ```
+    pub fn day_julian(&self) -> Option<f64> {
+        let delta = self.signed_duration_since(JULIAN_DAY_EPOCH.date());
+        let days = delta.num_days();
+        Some(days.to_f64()?
+            + delta.num_hours().to_f64().unwrap() / 24.
+            + delta.num_minutes().to_f64().unwrap() / (24. * 60.)
+            + delta.num_seconds().to_f64().unwrap() /  (24. * 3600.)
+            + delta.num_milliseconds().to_f64().unwrap() /  (24. * 3600000.))
     }
 
     #[inline]
