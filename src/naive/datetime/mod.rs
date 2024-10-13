@@ -1,3 +1,4 @@
+#![feature(f128)]
 // This is a part of Chrono.
 // See README.md and LICENSE.txt for details.
 
@@ -931,8 +932,8 @@ impl NaiveDateTime {
     /// assert!(d < 0.00000001);
     /// assert!(d > -0.00000001);
     /// ```
-    #[must_use]
-    pub fn day_julian(&self) -> Option<f64> {
+    #[allow(unstable_features)]
+    pub fn day_julian(&self) -> f128 {
         self.date().day_julian()
     }
 

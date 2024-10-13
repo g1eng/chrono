@@ -1,3 +1,4 @@
+#![feature(f128)]
 // This is a part of Chrono.
 // See README.md and LICENSE.txt for details.
 
@@ -36,6 +37,8 @@ use crate::month::Months;
 use crate::naive::{Days, IsoWeek, NaiveDateTime, NaiveTime, NaiveWeek};
 use crate::{expect, try_opt};
 use crate::{Datelike, TimeDelta, Weekday};
+
+#[cfg(feature = "julian")]
 use num_traits::ToPrimitive;
 
 use super::internals::{Mdf, YearFlags};
@@ -123,6 +126,7 @@ impl arbitrary::Arbitrary<'_> for NaiveDate {
         NaiveDate::from_yo_opt(year, ord).ok_or(arbitrary::Error::IncorrectFormat)
     }
 }
+
 
 impl NaiveDate {
     pub(crate) fn weeks_from(&self, day: Weekday) -> i32 {
@@ -1394,18 +1398,19 @@ impl NaiveDate {
     ///
     /// ```
     /// # use chrono::NaiveDate;
-    /// let d = NaiveDate::from_ymd_opt(-4711, 1, 1).unwrap().and_hms_opt(12,0,0).unwrap().day_julian().unwrap();
+    /// let d = NaiveDate::from_ymd_opt(-4711, 1, 1).unwrap().and_hms_opt(12,0,0).unwrap().day_julian();
     /// assert!(d < 0.0000001);
     /// assert!(d > -0.0000001);
+    /// let d = NaiveDate::from_ymd_opt(2024, 10, 11).unwrap().and_hms_opt(1,26,0).unwrap().day_julian();
+    /// //assert!(d < 12371693.);
+    /// assert!(d < 2460595.);
+    /// assert!(d > 2460590.);
+    /// // assert!(d > 2460593.);
     /// ```
-    pub fn day_julian(&self) -> Option<f64> {
+    #[allow(unstable_features)]
+    pub fn day_julian(&self) -> f128 {
         let delta = self.signed_duration_since(JULIAN_DAY_EPOCH.date());
-        let days = delta.num_days();
-        Some(days.to_f64()?
-            + delta.num_hours().to_f64().unwrap() / 24.
-            + delta.num_minutes().to_f64().unwrap() / (24. * 60.)
-            + delta.num_seconds().to_f64().unwrap() /  (24. * 3600.)
-            + delta.num_milliseconds().to_f64().unwrap() /  (24. * 3600000.))
+        delta.num_days() as f128
     }
 
     #[inline]

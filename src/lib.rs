@@ -507,6 +507,7 @@
 #![deny(clippy::tests_outside_test_module)]
 #![cfg_attr(not(any(feature = "std", test)), no_std)]
 #![cfg_attr(docsrs, feature(doc_auto_cfg))]
+#![feature(f128)]
 
 #[cfg(feature = "alloc")]
 extern crate alloc;
